@@ -1,0 +1,66 @@
+
+> cbt-backend@1.0.0 dev
+> ts-node-dev --respawn src/index.ts
+
+[INFO] 09:40:57 ts-node-dev ver. 2.0.0 (using ts-node ver. 10.9.2, typescript ver. 5.9.3)
+Backend running on port 5000
+[ERROR] POST /api/auth/login -> Error: Not allowed by CORS
+    at origin (/home/ubuntu/cbt-system/cbt-system-full/backend/src/index.ts:84:14)
+    at /home/ubuntu/cbt-system/cbt-system-full/backend/node_modules/cors/lib/index.js:219:13
+    at optionsCallback (/home/ubuntu/cbt-system/cbt-system-full/backend/node_modules/cors/lib/index.js:199:9)
+    at corsMiddleware (/home/ubuntu/cbt-system/cbt-system-full/backend/node_modules/cors/lib/index.js:204:7)
+    at Layer.handle [as handle_request] (/home/ubuntu/cbt-system/cbt-system-full/backend/node_modules/express/lib/router/layer.js:95:5)
+    at trim_prefix (/home/ubuntu/cbt-system/cbt-system-full/backend/node_modules/express/lib/router/index.js:328:13)
+    at /home/ubuntu/cbt-system/cbt-system-full/backend/node_modules/express/lib/router/index.js:286:9
+    at Function.process_params (/home/ubuntu/cbt-system/cbt-system-full/backend/node_modules/express/lib/router/index.js:346:12)
+    at next (/home/ubuntu/cbt-system/cbt-system-full/backend/node_modules/express/lib/router/index.js:280:10)
+    at contentSecurityPolicyMiddleware (/home/ubuntu/cbt-system/cbt-system-full/backend/node_modules/helmet/index.cjs:128:4)
+[INFO] 09:42:14 Restarting: /home/ubuntu/cbt-system/cbt-system-full/backend/src/index.ts has been modified
+Backend running on port 5000
+[ERROR] POST /api/auth/login -> Error: Not allowed by CORS
+    at origin (/home/ubuntu/cbt-system/cbt-system-full/backend/src/index.ts:84:14)
+    at /home/ubuntu/cbt-system/cbt-system-full/backend/node_modules/cors/lib/index.js:219:13
+    at optionsCallback (/home/ubuntu/cbt-system/cbt-system-full/backend/node_modules/cors/lib/index.js:199:9)
+    at corsMiddleware (/home/ubuntu/cbt-system/cbt-system-full/backend/node_modules/cors/lib/index.js:204:7)
+    at Layer.handle [as handle_request] (/home/ubuntu/cbt-system/cbt-system-full/backend/node_modules/express/lib/router/layer.js:95:5)
+    at trim_prefix (/home/ubuntu/cbt-system/cbt-system-full/backend/node_modules/express/lib/router/index.js:328:13)
+    at /home/ubuntu/cbt-system/cbt-system-full/backend/node_modules/express/lib/router/index.js:286:9
+    at Function.process_params (/home/ubuntu/cbt-system/cbt-system-full/backend/node_modules/express/lib/router/index.js:346:12)
+    at next (/home/ubuntu/cbt-system/cbt-system-full/backend/node_modules/express/lib/router/index.js:280:10)
+    at contentSecurityPolicyMiddleware (/home/ubuntu/cbt-system/cbt-system-full/backend/node_modules/helmet/index.cjs:128:4)
+[INFO] 09:42:34 Restarting: /home/ubuntu/cbt-system/cbt-system-full/backend/src/index.ts has been modified
+Backend running on port 5000
+Incoming Origin: https://5173-i5qlgb0jg6ha0wee1ba8f-e5965380.us2.manus.computer
+[ERROR] POST /api/auth/login -> Error: Not allowed by CORS
+    at origin (/home/ubuntu/cbt-system/cbt-system-full/backend/src/index.ts:85:14)
+    at /home/ubuntu/cbt-system/cbt-system-full/backend/node_modules/cors/lib/index.js:219:13
+    at optionsCallback (/home/ubuntu/cbt-system/cbt-system-full/backend/node_modules/cors/lib/index.js:199:9)
+    at corsMiddleware (/home/ubuntu/cbt-system/cbt-system-full/backend/node_modules/cors/lib/index.js:204:7)
+    at Layer.handle [as handle_request] (/home/ubuntu/cbt-system/cbt-system-full/backend/node_modules/express/lib/router/layer.js:95:5)
+    at trim_prefix (/home/ubuntu/cbt-system/cbt-system-full/backend/node_modules/express/lib/router/index.js:328:13)
+    at /home/ubuntu/cbt-system/cbt-system-full/backend/node_modules/express/lib/router/index.js:286:9
+    at Function.process_params (/home/ubuntu/cbt-system/cbt-system-full/backend/node_modules/express/lib/router/index.js:346:12)
+    at next (/home/ubuntu/cbt-system/cbt-system-full/backend/node_modules/express/lib/router/index.js:280:10)
+    at contentSecurityPolicyMiddleware (/home/ubuntu/cbt-system/cbt-system-full/backend/node_modules/helmet/index.cjs:128:4)
+[INFO] 09:42:53 Restarting: /home/ubuntu/cbt-system/cbt-system-full/backend/src/index.ts has been modified
+Backend running on port 5000
+ValidationError: The 'X-Forwarded-For' header is set but the Express 'trust proxy' setting is false (default). This could indicate a misconfiguration which would prevent express-rate-limit from accurately identifying users. See https://express-rate-limit.github.io/ERR_ERL_UNEXPECTED_X_FORWARDED_FOR/ for more information.
+    at Object.xForwardedForHeader (/home/ubuntu/cbt-system/cbt-system-full/backend/node_modules/express-rate-limit/dist/index.cjs:185:13)
+    at Object.wrappedValidations.<computed> [as xForwardedForHeader] (/home/ubuntu/cbt-system/cbt-system-full/backend/node_modules/express-rate-limit/dist/index.cjs:397:22)
+    at Object.keyGenerator (/home/ubuntu/cbt-system/cbt-system-full/backend/node_modules/express-rate-limit/dist/index.cjs:658:20)
+    at /home/ubuntu/cbt-system/cbt-system-full/backend/node_modules/express-rate-limit/dist/index.cjs:710:32
+    at processTicksAndRejections (node:internal/process/task_queues:105:5)
+    at /home/ubuntu/cbt-system/cbt-system-full/backend/node_modules/express-rate-limit/dist/index.cjs:691:5 {
+  code: 'ERR_ERL_UNEXPECTED_X_FORWARDED_FOR',
+  help: 'https://express-rate-limit.github.io/ERR_ERL_UNEXPECTED_X_FORWARDED_FOR/'
+}
+ValidationError: The 'X-Forwarded-For' header is set but the Express 'trust proxy' setting is false (default). This could indicate a misconfiguration which would prevent express-rate-limit from accurately identifying users. See https://express-rate-limit.github.io/ERR_ERL_UNEXPECTED_X_FORWARDED_FOR/ for more information.
+    at Object.xForwardedForHeader (/home/ubuntu/cbt-system/cbt-system-full/backend/node_modules/express-rate-limit/dist/index.cjs:185:13)
+    at Object.wrappedValidations.<computed> [as xForwardedForHeader] (/home/ubuntu/cbt-system/cbt-system-full/backend/node_modules/express-rate-limit/dist/index.cjs:397:22)
+    at Object.keyGenerator (/home/ubuntu/cbt-system/cbt-system-full/backend/node_modules/express-rate-limit/dist/index.cjs:658:20)
+    at /home/ubuntu/cbt-system/cbt-system-full/backend/node_modules/express-rate-limit/dist/index.cjs:710:32
+    at processTicksAndRejections (node:internal/process/task_queues:105:5)
+    at /home/ubuntu/cbt-system/cbt-system-full/backend/node_modules/express-rate-limit/dist/index.cjs:691:5 {
+  code: 'ERR_ERL_UNEXPECTED_X_FORWARDED_FOR',
+  help: 'https://express-rate-limit.github.io/ERR_ERL_UNEXPECTED_X_FORWARDED_FOR/'
+}
