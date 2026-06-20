@@ -152,9 +152,17 @@ async function main() {
   console.log('\n════════════════════════════════════════════════════');
   console.log('  TEMPORARY PASSWORD (expires in 15 minutes):');
   console.log(`\n      ${tempPassword}\n`);
-  console.log('  Read this to the admin now.');
-  console.log('  They will be forced to set a new password on login.');
-  console.log('  This password will NOT work after 15 minutes.');
+  console.log('  HOW TO USE THIS — there is NO special recovery screen.');
+  console.log('  Use the NORMAL login page, exactly like any other login:');
+  console.log('');
+  console.log(`    1. Go to: ${process.env.FRONTEND_URL || '<your frontend URL>'}/login`);
+  console.log(`    2. Email field    : ${user.email}`);
+  console.log(`    3. Password field : ${tempPassword}  (type/paste it here — the normal password box)`);
+  console.log('    4. Click "Login"');
+  console.log('');
+  console.log('  You will be logged in immediately and then forced to set');
+  console.log('  a permanent new password before reaching the dashboard.');
+  console.log('  This temp password will NOT work after 15 minutes.');
   console.log('════════════════════════════════════════════════════\n');
 
   rl.close();
