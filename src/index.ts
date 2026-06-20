@@ -349,6 +349,14 @@ app.post('/api/auth/reset-password', asyncHandler(async (req: Request, res: Resp
 
   // Mark request as used, update password
   await prisma.passwordResetRequest.update({ where: { id: request.id }, data: { isUsed: true } });
+  // Also clear ANY other pending reset flags for this user (e.g. a CLI recovery
+  // request created separately) — otherwise a leftover flag can surface a
+  // confusing "you must change your password" prompt on a later login, even
+  // though the password was already successfully changed through this path.
+  await prisma.passwordResetRequest.updateMany({
+    where: { userId: user.id, isUsed: false },
+    data: { isUsed: true }
+  });
   const passwordHash = await bcrypt.hash(newPassword, 12);
   await prisma.user.update({ where: { id: user.id }, data: { passwordHash } });
 
@@ -1088,6 +1096,15 @@ app.put('/api/admin/users/:userId', authenticate, requireRole(['SuperAdmin', 'Sc
       const targetUser = await prisma.user.findUnique({ where: { id: userId }, select: { passwordHash: true } });
       if (targetUser) await savePasswordHistory(userId, targetUser.passwordHash);
       updateData.passwordHash = await bcrypt.hash(password, 12);
+      // Clear ANY pending reset flags for this user — covers the case where
+      // this password change is happening via the forced-change screen after
+      // a CLI recovery, or any other path. Prevents a leftover flag (e.g. an
+      // abandoned CLI_RECOVERY request) from triggering a confusing repeat
+      // "you must change your password" prompt on a later login.
+      await prisma.passwordResetRequest.updateMany({
+        where: { userId, isUsed: false },
+        data: { isUsed: true }
+      });
     }
 
     const user = await prisma.user.update({ where: { id: userId }, data: updateData });

@@ -115,6 +115,15 @@ async function main() {
   const passwordHash = await bcrypt.hash(tempPassword, 12);
   await prisma.user.update({ where: { id: user.id }, data: { passwordHash } });
 
+  // Clear any other pending reset flags for this user (e.g. an outstanding
+  // forgot-password code request) before creating this one — keeps only a
+  // single active recovery path at a time and avoids a stale leftover flag
+  // surfacing later, however the admin actually ends up regaining access.
+  await prisma.passwordResetRequest.updateMany({
+    where: { userId: user.id, isUsed: false },
+    data: { isUsed: true }
+  });
+
   // Mark a CLI_RECOVERY reset request — the login route checks for this and
   // sets mustChangePassword: true, which forces the frontend to show the
   // mandatory "Change Your Password" screen before the dashboard loads.
