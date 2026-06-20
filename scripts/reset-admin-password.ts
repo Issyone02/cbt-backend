@@ -1,40 +1,41 @@
 /**
  * CBT System — Admin Password Recovery Script
  * ─────────────────────────────────────────────────────────────────────────────
- * SECURITY DESIGN — READ BEFORE USING:
+ * USE THIS WHEN: an admin (including the only SuperAdmin) forgets their
+ * password and CANNOT log in at all — so the in-app "Edit User" self-change
+ * flow and the "Forgot Password" code flow are both unavailable to them,
+ * since both require either being logged in or another admin to hand them
+ * a reset code.
  *
- * WHAT THIS SCRIPT DOES:
- *   - Generates a ONE-TIME temporary password (random, 12 chars)
- *   - The developer NEVER chooses the password — it is system-generated
- *   - The temporary password is printed ONCE and expires after 15 minutes
- *   - The admin MUST change it immediately on first login
- *   - Every use is recorded in the AuditLog with timestamp
+ * This script runs DIRECTLY against the database (works against Neon Postgres
+ * the same way it worked against local SQLite — just point DATABASE_URL in
+ * your local .env at the same Neon connection string your deployed backend
+ * uses). No web login required at all.
  *
- * WHY THIS IS SAFER THAN DEVELOPER-CHOSEN PASSWORD:
- *   - Developer cannot silently pick a password they remember later
- *   - The temp password is random — no one can predict or memorize it
- *   - 15-minute expiry means the window for misuse is tiny
- *   - The admin sees the audit log entry on their next login
- *
- * REMAINING RISK (be honest with your client):
- *   - A developer with server access COULD read the temp password from terminal
- *   - Mitigation: run this script with the admin physically present / on a call
- *   - The admin should change their password immediately and check audit logs
- *
- * HOW TO RUN (from backend/ folder):
+ * HOW TO RUN (from the backend/ folder, on YOUR machine — not on Render):
  *   npx ts-node scripts/reset-admin-password.ts
  *
- * BEST PRACTICE PROCEDURE:
- *   1. Admin calls developer and confirms their identity verbally
- *   2. Developer runs the script — temp password appears on screen
- *   3. Developer reads it aloud to the admin (or shares via WhatsApp/phone)
- *   4. Admin logs in immediately and changes password
- *   5. Both parties can verify the audit log entry was created
+ * SECURITY DESIGN:
+ *   - Generates a random, SYSTEM-CHOSEN temporary password — you (the
+ *     developer) never pick or type the new password yourself.
+ *   - The temp password is shown ONCE on screen and expires in 15 minutes.
+ *   - The admin is FORCED to set a new password on their very next login —
+ *     the temp password becomes permanently useless the moment they do.
+ *   - Every use is recorded in the AuditLog table (action: 
+ *     ADMIN_PASSWORD_RECOVERY_CLI) so there's a record of when this was used.
+ *
+ * RECOMMENDED PROCEDURE:
+ *   1. The admin calls you directly and verbally confirms who they are
+ *   2. You run this script with them on the phone/call
+ *   3. Read the temporary password to them — don't text/email it if avoidable
+ *   4. They log in immediately and are forced to set a permanent new password
+ *   5. They can check Admin Dashboard → Audit Log afterwards to confirm only
+ *      one recovery event happened, at the expected time
  * ─────────────────────────────────────────────────────────────────────────────
  */
 
 import { PrismaClient } from '@prisma/client';
-import * as bcrypt from 'bcryptjs';
+import bcrypt from 'bcryptjs';
 import * as readline from 'readline';
 import * as crypto from 'crypto';
 import * as dotenv from 'dotenv';
@@ -48,16 +49,15 @@ function ask(question: string): Promise<string> {
   return new Promise(resolve => rl.question(question, ans => resolve(ans.trim())));
 }
 
-// Generate a readable random temp password: 4 letters + 4 digits + 4 symbols
-// Easy to read aloud, hard to guess
+// Generates a readable random temp password: letters + digits + symbols.
+// Easy to read aloud over the phone, hard to guess.
 function generateTempPassword(): string {
-  const letters  = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz';
-  const digits   = '23456789';
-  const symbols  = '@#$%&';
+  const letters = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz';
+  const digits  = '23456789';
+  const symbols = '@#$%&';
   const pick = (chars: string, n: number) =>
     Array.from({ length: n }, () => chars[crypto.randomInt(chars.length)]).join('');
   const parts = [pick(letters, 4), pick(digits, 4), pick(symbols, 2)];
-  // Shuffle the combined result
   return parts.join('').split('').sort(() => crypto.randomInt(3) - 1).join('');
 }
 
@@ -66,11 +66,11 @@ async function main() {
   console.log('      CBT System  —  Admin Password Recovery');
   console.log('════════════════════════════════════════════════════');
   console.log('\n⚠  SECURITY NOTICE:');
-  console.log('   This script generates a temporary password.');
-  console.log('   The admin should be present or on the phone.');
+  console.log('   This generates a temporary password — not your real one.');
+  console.log('   The admin should be present or on a call with you.');
   console.log('   The temp password expires in 15 minutes.\n');
 
-  const proceed = await ask('Confirm you have verified the admin\'s identity (yes/no): ');
+  const proceed = await ask("Confirm you have verified the admin's identity (yes/no): ");
   if (proceed.toLowerCase() !== 'yes') {
     console.log('\nCancelled. Always verify identity before resetting a password.\n');
     rl.close(); await prisma.$disconnect(); process.exit(0);
@@ -92,43 +92,42 @@ async function main() {
   const roles = user.userRoles.map(ur => ur.role.name);
   console.log(`\n✓ Account: ${user.firstName} ${user.lastName} (${roles.join(', ')})`);
 
-  const confirm = await ask('Reset this account\'s password? (yes/no): ');
+  const confirm = await ask("Reset this account's password? (yes/no): ");
   if (confirm.toLowerCase() !== 'yes') {
     console.log('\nCancelled.\n');
     rl.close(); await prisma.$disconnect(); process.exit(0);
   }
 
-  // Generate temp password — developer does NOT choose it
+  // Generate temp password — the developer does NOT choose it.
   const tempPassword = generateTempPassword();
   const expiresAt = new Date(Date.now() + 15 * 60 * 1000); // 15 minutes
 
-  // Save old password to history
+  // Save current (forgotten) password hash to history before overwriting,
+  // keeping only the last 3 — same rule enforced everywhere else in the app.
   await prisma.passwordHistory.create({ data: { userId: user.id, passwordHash: user.passwordHash } });
   const allHistory = await prisma.passwordHistory.findMany({
     where: { userId: user.id }, orderBy: { createdAt: 'desc' }, select: { id: true }
   });
-  if (allHistory.length > 3)
+  if (allHistory.length > 3) {
     await prisma.passwordHistory.deleteMany({ where: { id: { in: allHistory.slice(3).map(h => h.id) } } });
+  }
 
-  // Store temp password hash + expiry in a reset request so the system
-  // forces a password change on first login
   const passwordHash = await bcrypt.hash(tempPassword, 12);
-  await prisma.user.update({
-    where: { id: user.id },
-    data: { passwordHash }
-  });
+  await prisma.user.update({ where: { id: user.id }, data: { passwordHash } });
 
-  // Create a used-once marker so admin is forced to change password on login
+  // Mark a CLI_RECOVERY reset request — the login route checks for this and
+  // sets mustChangePassword: true, which forces the frontend to show the
+  // mandatory "Change Your Password" screen before the dashboard loads.
   await prisma.passwordResetRequest.create({
     data: {
       userId: user.id,
       resetCode: 'CLI_RECOVERY',
-      isUsed: false, // front-end checks this to force password change
+      isUsed: false,
       expiresAt
     }
   });
 
-  // Audit log — records WHO ran this, WHEN, and for WHICH account
+  // Audit log — records WHO this was for, WHEN, and that it was a CLI recovery
   await prisma.auditLog.create({
     data: {
       userId: user.id,
@@ -136,18 +135,16 @@ async function main() {
       metadata: JSON.stringify({
         email: user.email,
         performedAt: new Date().toISOString(),
-        expiresAt: expiresAt.toISOString(),
-        note: 'Temporary password issued. Admin must change on first login.'
+        expiresAt: expiresAt.toISOString()
       })
     }
   });
 
-  // Print temp password clearly
   console.log('\n════════════════════════════════════════════════════');
   console.log('  TEMPORARY PASSWORD (expires in 15 minutes):');
   console.log(`\n      ${tempPassword}\n`);
   console.log('  Read this to the admin now.');
-  console.log('  They must log in and change it immediately.');
+  console.log('  They will be forced to set a new password on login.');
   console.log('  This password will NOT work after 15 minutes.');
   console.log('════════════════════════════════════════════════════\n');
 
