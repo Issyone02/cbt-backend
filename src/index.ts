@@ -840,9 +840,13 @@ app.post('/api/admin/exams', authenticate, requireRole(['SuperAdmin', 'SchoolAdm
 app.post('/api/admin/exams/:examId/questions', authenticate, requireRole(['SuperAdmin', 'SchoolAdmin', 'Lecturer']), async (req: AuthRequest, res: Response) => {
   const { examId } = req.params;
   const { text, type, points, orderIndex, options } = req.body;
-  // FIX 6: Validate input lengths to prevent database bloat
-  if (!text || typeof text !== 'string' || text.length > 5000) {
-    return res.status(400).json({ error: 'Question text must be between 1 and 5000 characters' });
+  // FIX 6 (updated): Validate input length. Raised from 5,000 to 2,000,000
+  // characters to accommodate embedded images (base64-encoded directly into
+  // the question's HTML via RichTextEditor) — a resized/compressed image is
+  // typically 50-300KB, well within this cap, while still bounding the field
+  // against unbounded abuse.
+  if (!text || typeof text !== 'string' || text.length > 2_000_000) {
+    return res.status(400).json({ error: 'Question text must be between 1 and 2,000,000 characters' });
   }
   // FIX 15: Validate points is a positive integer within sane bounds
   if (!Number.isInteger(points) || points < 1 || points > 100) {
@@ -963,10 +967,17 @@ app.get('/api/admin/exams/:examId/questions', authenticate, requireRole(['SuperA
 app.put('/api/admin/questions/:questionId', authenticate, requireRole(['SuperAdmin', 'SchoolAdmin', 'Lecturer']), async (req: AuthRequest, res: Response) => {
   const { questionId } = req.params;
   const { text, type, points, orderIndex, options } = req.body;
+  // Same validation as question creation — this route previously had none at all.
+  if (!text || typeof text !== 'string' || text.length > 2_000_000) {
+    return res.status(400).json({ error: 'Question text must be between 1 and 2,000,000 characters' });
+  }
+  if (!Number.isInteger(points) || points < 1 || points > 100) {
+    return res.status(400).json({ error: 'Points must be a whole number between 1 and 100' });
+  }
   await prisma.option.deleteMany({ where: { questionId } });
   const updated = await prisma.question.update({
     where: { id: questionId },
-    data: { text, type, points, orderIndex, options: { create: options.map((opt: any) => ({ text: opt.text, isCorrect: opt.isCorrect, orderIndex: opt.orderIndex })) } }
+    data: { text: sanitizeQuestionHtml(text), type, points, orderIndex, options: { create: options.map((opt: any) => ({ text: opt.text, isCorrect: opt.isCorrect, orderIndex: opt.orderIndex })) } }
   });
   res.json(updated);
 });
